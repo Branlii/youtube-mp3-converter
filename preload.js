@@ -5,6 +5,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld(
   'api', {
-    downloadUrls: (urls) => ipcRenderer.invoke('download-urls', urls),
+    downloadUrls: (urls, outputFolder) => ipcRenderer.invoke('download-urls', urls, outputFolder),
+    selectFolder: () => ipcRenderer.invoke('select-folder'),
   }
 );

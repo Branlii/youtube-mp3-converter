@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearButton = document.getElementById('clearButton');
   const resultsDiv = document.getElementById('results');
   const statusElement = document.getElementById('status');
+  const outputFolderInput = document.getElementById('outputFolder');
+  const folderSelectButton = document.getElementById('folderSelectButton');
   
   // Store URLs
   let urls = [];
@@ -22,10 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderUrlList();
         urlInput.value = '';
       } else {
-        showStatus('This URL is already in the list', 'error');
+        showStatus('Cette URL est déjà dans la liste', 'error');
       }
     } else {
-      showStatus('Please enter a valid YouTube URL', 'error');
+      showStatus('Veuillez entrer une URL YouTube valide', 'error');
     }
     
     urlInput.focus();
@@ -42,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     urlList.innerHTML = '';
     
     if (urls.length === 0) {
-      urlList.innerHTML = '<li class="empty-list">No URLs added yet</li>';
+      urlList.innerHTML = '<li class="empty-list">Aucune URL ajoutée pour le moment</li>';
       sendButton.disabled = true;
     } else {
       sendButton.disabled = false;
@@ -54,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         li.appendChild(urlText);
         
         const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Remove';
+        deleteBtn.textContent = 'Supprimer';
         deleteBtn.classList.add('delete-btn');
         deleteBtn.addEventListener('click', () => removeUrl(index));
         
@@ -88,10 +90,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
   }
   
+  // Select output folder
+  async function selectOutputFolder() {
+    try {
+      const folder = await window.api.selectFolder();
+      if (folder) {
+        outputFolderInput.value = folder;
+        showStatus('Dossier de sortie défini avec succès', 'success');
+      }
+    } catch (error) {
+      showStatus('Erreur lors de la sélection du dossier', 'error');
+      console.error('Folder selection error:', error);
+    }
+  }
+  
   // Send URLs for processing
   async function sendUrls() {
     if (urls.length === 0) {
-      showStatus('No URLs to download', 'error');
+      showStatus('Aucune URL à télécharger', 'error');
+      return;
+    }
+    
+    const outputFolder = outputFolderInput.value.trim();
+    if (!outputFolder) {
+      showStatus('Veuillez sélectionner un dossier de sortie', 'error');
       return;
     }
     
@@ -100,28 +122,30 @@ document.addEventListener('DOMContentLoaded', () => {
       sendButton.disabled = true;
       addButton.disabled = true;
       clearButton.disabled = true;
+      folderSelectButton.disabled = true;
       
-      showStatus('Processing downloads...', 'info');
+      showStatus('Traitement des téléchargements...', 'info');
       
-      // Send URLs to the main process
-      const results = await window.api.downloadUrls(urls);
+      // Send URLs to the main process with the output folder
+      const results = await window.api.downloadUrls(urls, outputFolder);
       
       // Display results
       displayResults(results);
       
-      showStatus('Download process completed!', 'success');
+      showStatus('Le processus de téléchargement est terminé!', 'success');
     } catch (error) {
-      showStatus(`Error: ${error.message}`, 'error');
+      showStatus(`Erreur: ${error.message}`, 'error');
       console.error('Download error:', error);
     } finally {
       // Re-enable buttons
       sendButton.disabled = false;
       addButton.disabled = false;
       clearButton.disabled = false;
+      folderSelectButton.disabled = false;
     }
   }
   
-  // Display download results
+  // Afficher les résultats des téléchargements
   function displayResults(results) {
     resultsDiv.innerHTML = '';
     
@@ -131,23 +155,24 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (result.success) {
         resultItem.classList.add('result-success');
-        resultItem.innerHTML = `<strong>Success:</strong> ${result.message}`;
+        resultItem.innerHTML = `<strong>Réussi:</strong> ${result.message}`;
       } else {
         resultItem.classList.add('result-error');
-        resultItem.innerHTML = `<strong>Error:</strong> Failed to download ${result.url} - ${result.message}`;
+        resultItem.innerHTML = `<strong>Erreur:</strong> Échec du téléchargement ${result.url} - ${result.message}`;
       }
       
       resultsDiv.appendChild(resultItem);
     });
   }
   
-  // Event listeners
+  // Écouteurs d'événements
   addButton.addEventListener('click', addUrl);
   
   urlInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addUrl();
   });
   
+  folderSelectButton.addEventListener('click', selectOutputFolder);
   sendButton.addEventListener('click', sendUrls);
   clearButton.addEventListener('click', clearList);
   
