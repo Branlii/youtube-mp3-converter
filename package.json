@@ -1,12 +1,16 @@
 {
   "name": "youtube-mp3-converter",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "main.js",
   "license": "MIT",
   "scripts": {
-    "dev": "node index.js"
+    "start": "electron .",
+    "dev": "electron . --dev"
   },
   "devDependencies": {
     "electron": "^36.4.0"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.0"
   }
 }
